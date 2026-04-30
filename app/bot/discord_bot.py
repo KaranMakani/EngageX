@@ -2,7 +2,7 @@
 Discord bot - the user-facing interface for EngageX.
 
 Users interact with the system entirely through Discord.
-Slash commands for explicit actions.
+Slash commands for explicit actions, message listeners for passive tracking.
 """
 import discord
 from discord.ext import commands
@@ -10,6 +10,7 @@ from app.database import async_session
 from app.models import User, ActivityLog
 from app.logic import (
     update_streak, check_hidden_quests,
+    score_content, score_to_points,
     calculate_reputation, get_tier
 )
 from sqlalchemy import select, desc
@@ -130,6 +131,82 @@ async def referrals_cmd(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"**Your Referrals** — Total: {len(refs)} | Validated: {validated} | Avg Quality: {avg_score:.1f}"
     )
+
+
+@bot.tree.command(name="submit", description="Submit content for scoring")
+async def submit_cmd(interaction: discord.Interaction, content: str):
+    """Submit content to be scored by AI."""
+    user = await ensure_user(str(interaction.user.id), interaction.user.name)
+
+    async with async_session() as db:
+        # score the content
+        scoring = await score_content(content)
+        points = score_to_points(scoring["score"])
+
+        # streak multiplier
+        from app.logic.streaks import get_multiplier
+        multiplier = get_multiplier(user.streak)
+        points = int(points * multiplier)
+
+        # award points
+        if not user.shadow_banned:
+            user.points += points
+        else:
+            user.points += points // 3
+
+        # log it
+        log = ActivityLog(
+            user_id=user.discord_id,
+            action="content_submitted",
+            metadata_={"content": content[:200], "score": scoring["score"], "points": points}
+        )
+        db.add(log)
+
+        # update streak
+        await update_streak(db, user)
+
+        # check hidden quests
+        new_quests = await check_hidden_quests(db, user)
+
+        await db.commit()
+
+    response = f"Content scored! **{scoring['score']}/100** → **{points} pts** (x{multiplier} streak bonus)"
+    if new_quests:
+        for q in new_quests:
+            response += f"\n🎁 Hidden quest unlocked: **{q['name']}**! +{q['points']} pts"
+
+    await interaction.response.send_message(response)
+
+
+# --- message listener ---
+
+@bot.listen()
+async def on_message(message: discord.Message):
+    """Passively track activity. Every message = potential streak update."""
+    if message.author.bot:
+        return
+
+    async with async_session() as db:
+        # make sure user exists
+        user = await ensure_user(str(message.author.id), message.author.name)
+
+        # log the activity
+        log = ActivityLog(
+            user_id=user.discord_id,
+            action="message_sent",
+            metadata_={"channel": str(message.channel.id), "length": len(message.content)}
+        )
+        db.add(log)
+
+        # update their streak
+        await update_streak(db, user)
+        await db.commit()
+
+
+@bot.listen()
+async def on_member_join(member: discord.Member):
+    """Auto-register new members when they join the server."""
+    await ensure_user(str(member.id), member.name)
 
 
 # --- startup ---
