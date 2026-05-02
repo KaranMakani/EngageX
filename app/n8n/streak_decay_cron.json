@@ -1,0 +1,64 @@
+{
+  "name": "EngageX - Daily Streak & Decay Cron",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "hours", "hoursInterval": 24}]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Every 24 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "{{$env.API_URL}}/cron/streak-reset",
+        "method": "POST",
+        "options": {}
+      },
+      "id": "streak-reset",
+      "name": "Reset Streaks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "url": "{{$env.API_URL}}/cron/decay",
+        "method": "POST",
+        "options": {}
+      },
+      "id": "point-decay",
+      "name": "Apply Point Decay",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {
+        "url": "{{$env.API_URL}}/cron/reengage",
+        "method": "POST",
+        "options": {}
+      },
+      "id": "reengage",
+      "name": "Send Re-engagement DMs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [750, 300]
+    }
+  ],
+  "connections": {
+    "Every 24 Hours": {
+      "main": [[{"node": "Reset Streaks", "type": "main", "index": 0}]]
+    },
+    "Reset Streaks": {
+      "main": [[{"node": "Apply Point Decay", "type": "main", "index": 0}]]
+    },
+    "Apply Point Decay": {
+      "main": [[{"node": "Send Re-engagement DMs", "type": "main", "index": 0}]]
+    }
+  }
+}

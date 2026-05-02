@@ -1,0 +1,58 @@
+{
+  "name": "EngageX - Fraud Detection",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "hours", "hoursInterval": 6}]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Every 6 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.API_URL}}/api/check-fraud",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"user_id\": \"{{ $json.discord_id }}\"}",
+        "options": {}
+      },
+      "id": "check-fraud",
+      "name": "Run Fraud Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.risk }}",
+              "operation": "equals",
+              "value2": "high"
+            }
+          ]
+        }
+      },
+      "id": "if-risk-high",
+      "name": "Is High Risk?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [750, 300]
+    }
+  ],
+  "connections": {
+    "Every 6 Hours": {
+      "main": [[{"node": "Run Fraud Check", "type": "main", "index": 0}]]
+    },
+    "Run Fraud Check": {
+      "main": [[{"node": "Is High Risk?", "type": "main", "index": 0}]]
+    }
+  }
+}
