@@ -93,17 +93,13 @@ sequenceDiagram
 
 ### Discord Bot
 
-| `/leaderboard` | `/profile` |
+| `/leaderboard` — Top 10 ranked users | `/profile` — Full profile embed |
 |:---:|:---:|
 | ![Leaderboard](assets/discord-leaderboard.png) | ![Profile](assets/discord-profile.png) |
 
-| `/points` | `/submit` Result |
+| `/submit` — AI content scoring | `/referrals` — Referral quality stats |
 |:---:|:---:|
-| ![Points](assets/discord-points.png) | ![Submit Result](assets/discord-submit-result.png) |
-
-| `/referrals` | AI Content Scoring |
-|:---:|:---:|
-| ![Referrals](assets/discord-referrals.png) | ![Submit Command](assets/discord-submit-cmd.png) |
+| ![Submit Result](assets/discord-submit-result.png) | ![Referrals](assets/discord-referrals.png) |
 
 ### n8n Automation Workflows
 
