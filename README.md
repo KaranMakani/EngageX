@@ -1,22 +1,59 @@
 # EngageX (Working Title)
 
-**Intelligent Referral, Task & Engagement Engine**
+**Intelligent Referral, Task & Engagement Engine for Discord Communities**
 
 [![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.136-green.svg)](https://fastapi.tiangolo.com)
 [![Discord.py](https://img.shields.io/badge/discord.py-2.7-blue.svg)](https://discordpy.readthedocs.io)
 [![n8n](https://img.shields.io/badge/n8n-Automation-FF6D5A.svg)](https://n8n.io)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Async-336791.svg)](https://postgresql.org)
+[![Railway](https://img.shields.io/badge/Railway-Deploy-0B0D0E.svg)](https://railway.app)
 
 EngageX is a behavior-driven growth engine for Discord communities. It tracks user actions, rewards quality engagement, detects fraud silently, and drives retention through gamification loops — all powered by n8n automation and AI scoring.
 
 ---
 
-## How It Works
+## Architecture
 
+```mermaid
+graph LR
+    A[Discord Users] -->|Slash Commands + Messages| B[discord.py Bot]
+    B -->|Activity Events| C[FastAPI API]
+    C -->|Read/Write| D[(PostgreSQL)]
+    E[n8n Cron] -->|POST /cron/*| C
+    C -->|AI Scoring| F[OpenRouter API]
+    E -->|Fraud Check| C
+    D -->|Data| E
+    C -->|Re-engagement DMs| B
 ```
-[User Action] → [Discord / API] → [n8n Workflows] → [PostgreSQL] → [Rewards + Feedback]
+
+```mermaid
+graph TB
+    subgraph User-Facing
+        A[/points] --> G[Check Stats]
+        B[/leaderboard] --> H[Rankings]
+        C[/profile] --> I[Full Profile]
+        D[/tasks] --> J[Quest Board]
+        E[/referrals] --> K[Referral Stats]
+        F[/submit] --> L[AI Content Score]
+    end
+
+    subgraph Passive Tracking
+        M[on_message] --> N[Streak Update]
+        O[on_member_join] --> P[Auto-Register]
+    end
+
+    subgraph Automation Layer
+        Q[24h Cron] --> R[Reset Streaks]
+        Q --> S[Apply Decay]
+        Q --> T[Re-engage DMs]
+        U[6h Cron] --> V[Fraud Detection]
+    end
 ```
+
+---
+
+## How It Works
 
 Instead of the traditional `command → response` bot model, EngageX follows:
 
@@ -24,7 +61,61 @@ Instead of the traditional `command → response` bot model, EngageX follows:
 observe → analyze → decide → act → adapt
 ```
 
-Every user interaction is logged, analyzed, and used to drive personalized engagement.
+Every user interaction is logged, analyzed, and used to drive personalized engagement. No manual moderation needed.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Bot
+    participant API
+    participant DB
+    participant AI
+    participant n8n
+
+    User->>Bot: /submit "My content..."
+    Bot->>API: Score content
+    API->>AI: Evaluate quality
+    AI-->>API: Score: 85/100
+    API->>DB: Award points + update streak
+    API->>DB: Check hidden quests
+    API-->>Bot: 25 pts (x1.5 streak bonus)
+    Bot-->>User: Content scored! 🎉
+
+    Note over n8n,DB: 6 hours later...
+    n8n->>API: POST /check-fraud
+    API->>DB: Scan for suspicious patterns
+    API-->>n8n: Risk assessment complete
+```
+
+---
+
+## Screenshots
+
+### Discord Bot
+
+| `/leaderboard` | `/profile` |
+|:---:|:---:|
+| ![Leaderboard](assets/discord-leaderboard.png) | ![Profile](assets/discord-profile.png) |
+
+| `/points` | `/submit` Result |
+|:---:|:---:|
+| ![Points](assets/discord-points.png) | ![Submit Result](assets/discord-submit-result.png) |
+
+| `/referrals` | AI Content Scoring |
+|:---:|:---:|
+| ![Referrals](assets/discord-referrals.png) | ![Submit Command](assets/discord-submit-cmd.png) |
+
+### n8n Automation Workflows
+
+| Streak & Decay Cron (24h) | Fraud Detection (6h) |
+|:---:|:---:|
+| ![Streak Decay Cron](assets/n8n-streak-decay-cron.png) | ![Fraud Detection](assets/n8n-fraud-detection.png) |
+
+### Railway Infrastructure
+
+| Infrastructure Topology |
+|:---:|
+| ![Railway Infrastructure](assets/railway-infrastructure.png) |
 
 ---
 
@@ -40,7 +131,6 @@ Every user interaction is logged, analyzed, and used to drive personalized engag
 | **Point Decay** | Inactive users lose points over time, keeping the leaderboard competitive |
 | **Reputation System** | Weighted scoring — content creation > referrals > participation. Fraud = penalty |
 | **Re-engagement Engine** | Automated nudges to inactive users via Discord DMs |
-| **Dynamic Leaderboard** | Weekly resets, top performers announced, reward distribution triggers |
 
 ---
 
@@ -55,6 +145,38 @@ Every user interaction is logged, analyzed, and used to drive personalized engag
 | AI Scoring | OpenAI / OpenRouter |
 | ORM | SQLAlchemy (async) |
 | Package Manager | Poetry |
+
+---
+
+## Data Flow
+
+```mermaid
+graph LR
+    subgraph Engagement Loop
+        A[User Action] --> B[Log Activity]
+        B --> C[Update Streak]
+        C --> D[Award Points]
+        D --> E[Check Quests]
+        E --> F[Update Leaderboard]
+        F --> A
+    end
+
+    subgraph Anti-Abuse Loop
+        G[n8n Cron 6h] --> H[Scan Patterns]
+        H --> I{Suspicious?}
+        I -->|Yes| J[Shadow Ban]
+        I -->|No| K[Clear]
+        J --> L[Reduce Rewards]
+    end
+
+    subgraph Retention Loop
+        M[n8n Cron 24h] --> N[Apply Decay]
+        N --> O[Find Inactive]
+        O --> P[Send Nudge DM]
+        P --> Q[User Returns]
+        Q --> A
+    end
+```
 
 ---
 
@@ -128,6 +250,7 @@ EngageX/
 │   └── n8n/
 │       ├── streak_decay_cron.json
 │       └── fraud_detection.json
+├── assets/                   # Screenshots for README
 ├── tests/
 │   └── test_logic.py        # 27 unit tests for core logic
 ├── Dockerfile
@@ -139,21 +262,60 @@ EngageX/
 
 ## Database Schema
 
-```sql
--- core users table
-users (id, discord_id, username, points, reputation_score, streak, last_active, fraud_flag, shadow_banned, created_at)
+```mermaid
+erDiagram
+    USERS ||--o{ REFERRALS : "makes"
+    USERS ||--o{ USER_TASKS : "completes"
+    USERS ||--o{ ACTIVITY_LOGS : "generates"
+    TASKS ||--o{ USER_TASKS : "assigned to"
 
--- referral tracking with quality scores
-referrals (id, referrer_id, referred_user, status, quality_score, created_at)
+    USERS {
+        int id PK
+        string discord_id
+        string username
+        int points
+        float reputation_score
+        int streak
+        date last_active
+        bool fraud_flag
+        bool shadow_banned
+        datetime created_at
+    }
 
--- task definitions (visible + hidden)
-tasks (id, name, description, points, type, hidden, unlock_condition)
+    REFERRALS {
+        int id PK
+        string referrer_id FK
+        string referred_user
+        string status
+        float quality_score
+        datetime created_at
+    }
 
--- user-task assignments
-user_tasks (id, user_id, task_id, status, completed_at)
+    TASKS {
+        int id PK
+        string name
+        string description
+        int points
+        string type
+        bool hidden
+        string unlock_condition
+    }
 
--- audit log for everything
-activity_logs (id, user_id, action, metadata JSONB, created_at)
+    USER_TASKS {
+        int id PK
+        string user_id FK
+        int task_id FK
+        string status
+        datetime completed_at
+    }
+
+    ACTIVITY_LOGS {
+        int id PK
+        string user_id FK
+        string action
+        jsonb metadata
+        datetime created_at
+    }
 ```
 
 ---
@@ -163,7 +325,7 @@ activity_logs (id, user_id, action, metadata JSONB, created_at)
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/EngageX.git
+git clone https://github.com/KaranMakani/EngageX.git
 cd EngageX
 poetry install
 ```
@@ -204,9 +366,6 @@ cp .env.example .env
 ```bash
 # start the API + Discord bot
 poetry run uvicorn app.main:app --reload
-
-# or use the run script
-bash run.sh
 ```
 
 ### 7. Deploy API to Railway (optional)
@@ -227,25 +386,27 @@ EngageX handles fraud silently — no public callouts, no drama:
 
 ---
 
-## Architecture
+## Gamification Loops
 
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Discord    │────▶│   FastAPI     │────▶│  PostgreSQL  │
-│   Bot        │     │   API         │     │  (Railway)   │
-└─────────────┘     └──────┬───────┘     └─────────────┘
-                           │                      ▲
-                           ▼                      │
-                    ┌──────────────┐              │
-                    │     n8n      │──────────────┘
-                    │  (Railway)   │  (cron jobs +
-                    └──────────────┘   webhooks)
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │  OpenAI /    │
-                    │  OpenRouter  │
-                    └──────────────┘
+```mermaid
+graph TB
+    subgraph Streak Rewards
+        A[3 Day Streak] -->|Bonus| B[+10% Points]
+        C[7 Day Streak] -->|1.5x Multiplier| D[+50% Points]
+        E[14 Day Streak] -->|2x Multiplier| F[+100% Points]
+        G[30 Day Streak] -->|Legend Status| H[+200% Points]
+    end
+
+    subgraph Hidden Quests
+        I[First Referral] -->|First Blood| J[+20 pts]
+        K[7 Day Streak] -->|Consistency is Key| L[+50 pts]
+        M[3 Content Submissions] -->|Voice of Community| N[+30 pts]
+    end
+
+    subgraph Point Decay
+        O[3 Days Inactive] -->|Grace Period| P[No Decay]
+        Q[4+ Days Inactive] -->|2% Daily| R[Compound Decay]
+    end
 ```
 
 ---

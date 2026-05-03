@@ -69,6 +69,7 @@ async def leaderboard_cmd(interaction: discord.Interaction):
 
 @bot.tree.command(name="profile", description="Your full profile")
 async def profile_cmd(interaction: discord.Interaction):
+    await interaction.response.defer()
     user = await ensure_user(str(interaction.user.id), interaction.user.name)
     tier = get_tier(user.reputation_score)
 
@@ -82,11 +83,12 @@ async def profile_cmd(interaction: discord.Interaction):
     embed.add_field(name="Reputation", value=f"{user.reputation_score:.1f}", inline=True)
     embed.add_field(name="Last Active", value=str(user.last_active), inline=True)
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.followup.send(embed=embed)
 
 
 @bot.tree.command(name="tasks", description="See available tasks")
 async def tasks_cmd(interaction: discord.Interaction):
+    await interaction.response.defer()
     async with async_session() as db:
         from app.models import Task, UserTask
         task_result = await db.execute(select(Task).where(Task.hidden == False))
@@ -101,7 +103,7 @@ async def tasks_cmd(interaction: discord.Interaction):
         done_ids = set(done_result.scalars().all())
 
     if not tasks:
-        await interaction.response.send_message("No tasks available right now.")
+        await interaction.followup.send("No tasks available right now.")
         return
 
     lines = ["**Available Tasks**\n"]
@@ -109,7 +111,7 @@ async def tasks_cmd(interaction: discord.Interaction):
         status = "~~completed~~" if t.id in done_ids else f"**{t.points} pts**"
         lines.append(f"• {t.name} — {status}")
 
-    await interaction.response.send_message("\n".join(lines))
+    await interaction.followup.send("\n".join(lines))
 
 
 @bot.tree.command(name="referrals", description="See your referral stats")
@@ -136,6 +138,7 @@ async def referrals_cmd(interaction: discord.Interaction):
 @bot.tree.command(name="submit", description="Submit content for scoring")
 async def submit_cmd(interaction: discord.Interaction, content: str):
     """Submit content to be scored by AI."""
+    await interaction.response.defer()
     user = await ensure_user(str(interaction.user.id), interaction.user.name)
 
     async with async_session() as db:
@@ -175,7 +178,7 @@ async def submit_cmd(interaction: discord.Interaction, content: str):
         for q in new_quests:
             response += f"\n🎁 Hidden quest unlocked: **{q['name']}**! +{q['points']} pts"
 
-    await interaction.response.send_message(response)
+    await interaction.followup.send(response)
 
 
 # --- message listener ---
