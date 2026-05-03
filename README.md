@@ -103,9 +103,9 @@ sequenceDiagram
 
 ### n8n Automation Workflows
 
-| Streak & Decay Cron (24h) | Fraud Detection (6h) |
+| Streak & Decay Cron (24h) | 
 |:---:|:---:|
-| ![Streak Decay Cron](assets/n8n-streak-decay-cron.png) | ![Fraud Detection](assets/n8n-fraud-detection.png) |
+| ![Streak Decay Cron](assets/n8n-streak-decay-cron.png) | 
 
 ### Railway Infrastructure
 
