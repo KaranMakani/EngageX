@@ -9,3 +9,4 @@ poetry.lock
 .qoder/
 readme.nd
 test images /
+.DS_Store
