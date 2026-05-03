@@ -45,18 +45,6 @@ graph LR
 |:---:|:---:|:---:|:---:|
 | ![Leaderboard](assets/discord-leaderboard.png) | ![Profile](assets/discord-profile.png) | ![Submit](assets/discord-submit-result.png) | ![Referrals](assets/discord-referrals.png) |
 
-### n8n Automation Workflows
-
-| Streak & Decay Cron (24h) | Fraud Detection (6h) |
-|:---:|:---:|
-| ![Streak Decay Cron](assets/n8n-streak-decay-cron.png) | ![Fraud Detection](assets/n8n-fraud-detection.png) |
-
-### Railway Infrastructure
-
-| Infrastructure Topology |
-|:---:|
-| ![Railway Infrastructure](assets/railway-infrastructure.png) |
-
 ---
 
 ## Commands
